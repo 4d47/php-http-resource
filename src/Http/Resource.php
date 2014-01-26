@@ -41,7 +41,7 @@ class Resource
 
     /**
      * The base directory of views script.
-    _ *
+     *
      * @var string
      */
     public static $viewsDir = 'views';
