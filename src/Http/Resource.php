@@ -119,9 +119,26 @@ class Resource
      */
     public static function match($path)
     {
-        $base = static::$base ? $base = call_user_func_array(array('static', 'path'), static::$base) : '';
-        $pattern = preg_replace('#:([^/]+)#', '(?P<$1>[^/]+)', $base . static::$path);
-        preg_match("#^$pattern$#", $path, $matches);
+        $base = static::$base ? call_user_func_array(array('static', 'path'), static::$base) : '';
+        $route = $base . static::$path;
+
+        $replacements = array(
+            '/\(/' => '(',
+            '/\)/' => ')?',
+            '/\./' => '\.',
+            '/:([^()\/]+)/' => '(?P<$1>[^./]+)',
+            '/\*/' => '(?P<glob>.*?)',
+        );
+        foreach ($replacements as $pattern => $replacement) {
+            $route = preg_replace($pattern, $replacement, $route);
+        }
+        preg_match("{^$route$}", $path, $matches);
+        // filter numeric key > 1 in results because it is ugly
+        foreach ($matches as $key => $value) {
+            if (is_integer($key) && $key >= 1) {
+                unset($matches[$key]);
+            }
+        }
         return $matches;
     }
 
