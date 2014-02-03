@@ -127,7 +127,7 @@ class Resource
             '/\)/' => ')?',
             '/\./' => '\.',
             '/:([^()\/]+)/' => '(?P<$1>[^./]+)',
-            '/\*/' => '(?P<glob>.*?)',
+            '/\*/' => '(?P<rest>.*?)',
         );
         foreach ($replacements as $pattern => $replacement) {
             $route = preg_replace($pattern, $replacement, $route);
@@ -156,9 +156,11 @@ class Resource
      */
     public static function path()
     {
-        $base = !empty($_SERVER['REDIRECT_BASE']) ? rtrim($_SERVER['REDIRECT_BASE'], '/') : '';
-        $path = '/' . implode('/', func_get_args());
-        return "$base$path";
+        $segments = func_get_args();
+        if (!empty($_SERVER['REDIRECT_BASE'])) {
+            array_unshift($segments, trim($_SERVER['REDIRECT_BASE'], '/'));
+        }
+        return '/' . implode('/', $segments);
     }
 
     /**

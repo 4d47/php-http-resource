@@ -3,6 +3,13 @@ namespace Http;
 
 class ResourceTest extends \PHPUnit_Framework_TestCase
 {
+    public function setUp()
+    {
+        $_SERVER['SERVER_PORT'] = '80';
+        $_SERVER['SERVER_NAME'] = 'example.com';
+        Resource::$path = '/';
+    }
+
     public function testMatch()
     {
         Resource::$path = '/';
@@ -12,12 +19,20 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         Resource::$path = '/products/:name';
         $this->assertSame(array(), Resource::match('/about'));
         $this->assertSame(array(), Resource::match('/products/'));
-        $expected = array('/products/a', 'name' => 'a');
-        $this->assertSame($expected, Resource::match('/products/a'));
+        $this->assertSame(array('/products/a', 'name' => 'a'), Resource::match('/products/a'));
+
+        Resource::$path = '/a-b/:name';
+        $this->assertSame(array('/a-b/a', 'name' => 'a'), Resource::match('/a-b/a'));
+
+        Resource::$path = '/a/*';
+        $this->assertSame(array('/a/foo/bar', 'rest' => 'foo/bar'), Resource::match('/a/foo/bar'));
+        $this->assertSame(array('/a/', 'rest' => ''), Resource::match('/a/'));
+        $this->assertSame(array(), Resource::match('/a'));
+        Resource::$path = '/a(/*)';
+        $this->assertSame(array('/a'), Resource::match('/a'));
 
         Resource::$path = '/:foo/:bar/:baz';
-        $expected = array('/one/two/three', 'foo' => 'one', 'bar' => 'two', 'baz' => 'three');
-        $this->assertSame($expected, Resource::match('/one/two/three'));
+        $this->assertSame(array('/one/two/three', 'foo' => 'one', 'bar' => 'two', 'baz' => 'three'), Resource::match('/one/two/three'));
 
         Resource::$path = '/:controller(/:action(/:id))';
         $this->assertSame(array('/one', 'controller' => 'one'), Resource::match('/one'));
@@ -34,17 +49,29 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(array('/one/two/3.xml', 'controller' => 'one', 'action' => 'two', 'id' => '3', 'format' => 'xml'), Resource::match('/one/two/3.xml'));
     }
 
+    public function testLink()
+    {
+        $this->assertSame('http://example.com/', Resource::link());
+        Resource::$base[] = 'admin';
+        $this->assertSame('http://example.com/admin/a', Resource::link('a'));
+    }
+
     public function testPath()
     {
-        Resource::$path = '/';
         $this->assertSame('/', Resource::path());
-
-        Resource::$path = '/:foo/:bar/:baz';
         $this->assertSame('/a/b/c', Resource::path('a', 'b', 'c'));
         $this->assertSame('/a', Resource::path('a'));
-            # should propably error instead, missing 2 parameters
+        $_SERVER['REDIRECT_BASE'] = '/admin/';
+        $this->assertSame('/admin', Resource::path());
+        $this->assertSame('/admin/a', Resource::path('a'));
+        Resource::$base[] = 'admin';
+        $this->assertSame('/admin/a', Resource::path('a'));
+    }
 
-        Resource::$path = '/:foo';
-        $this->assertSame('/wat', Resource::path('wat'));
+    public function testUrl()
+    {
+        $this->assertSame('http://example.com/a', Resource::url('a'));
+        Resource::$base[] = 'admin';
+        $this->assertSame('http://example.com/a', Resource::url('a'));
     }
 }
