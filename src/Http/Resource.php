@@ -10,30 +10,29 @@ namespace Http;
 class Resource
 {
     /**
-     * The Request-URI regex pattern this resource match.
+     * The Request-URI pattern this resource match.
      *
-     * As a convenience the pattern is wrapped between "#^$pattern$#"
-     * before it's used so it matches strictly and slashes does not
-     * have to be escaped.  Also, the colon is treated as an additional
-     * special character, allowing to write <code>:name</code>
-     * instead of <code>(?P<name>[^/]+)</code>.
-     *
+     *     eg. /products/:name(.:format)
+     * 
+     * Colon prefixed segments are parameters that
+     * will be assigned as instance properties.
+     * Optional parameters are denoted by parentheses.
+     * 
      * @var string
      */
     public static $path = '/';
 
     /**
-     * List of Request-URI segments prepended to the `$path`.
-     * Eg. Adding 'admin' will match resource with /admin prefixed
-     * to path and generate proper `link()` URLs.
+     * List of Request-URI segments prepended to `$path`.
+     * Can be used to configure resource on a different base path.
      *
      * @var array
      */
     public static $base = array();
 
     /**
-     * The layout filename to search for;
-     * use <code>false</code> to disable.
+     * The layout script filename to search for
+     * or <code>false</code> to disable.
      *
      * @var null|string
      */
@@ -254,11 +253,9 @@ class Resource
 
     /**
      * Require a file, controlling it's symbol table.
-     * todo: make the function variadic instead of $content,
-     * eg. renderFile(filename, array $params, array $params, ...)
      *
      * @param string Filename
-     * @param array Variables to be extracted
+     * @param array|object Variables to be extracted
      * @param string $content variable
      */
     protected static function renderFile()
