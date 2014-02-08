@@ -276,16 +276,4 @@ class Resource
     {
         return str_replace('\\', '/', strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $className)));
     }
-
-    /**
-     * Utility method to throw an exception inline. eg.
-     *
-     *     $foo = get($id) ?: $this->raise('Http\NotFound');
-     *
-     * @see http://stackoverflow.com/questions/1211237/php-or-statement-on-instruction-fail-how-to-throw-a-new-exception#1211497
-     */
-    protected function raise($className, $message = null)
-    {
-        throw new $className($message);
-    }
 }
