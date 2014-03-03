@@ -47,6 +47,9 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         Resource::$path = '/:controller(/:action(/:id(.:format)))';
         $this->assertSame(array('/one', 'controller' => 'one'), Resource::match('/one'));
         $this->assertSame(array('/one/two/3.xml', 'controller' => 'one', 'action' => 'two', 'id' => '3', 'format' => 'xml'), Resource::match('/one/two/3.xml'));
+
+        Resource::$path = '/:name.:extension';
+        $this->assertSame(array('/a.png', 'name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
     }
 
     public function testLink()
