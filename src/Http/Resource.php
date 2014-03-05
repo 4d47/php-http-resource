@@ -39,12 +39,12 @@ class Resource
     public static $layout = 'layout.php';
 
     /**
-     * The property name containing the last modified
+     * The attribute name containing the last modified
      * datetime in the in `get` response.
      *
      * @var string
      */
-    public static $lastModifiedProperty = null;
+    public static $lastModifiedAttribute = 'lastModified';
 
     /**
      * The base directory of views script.
@@ -294,7 +294,7 @@ class Resource
      */
     private static function getLastModified($object)
     {
-        $name = self::$lastModifiedProperty;
+        $name = self::$lastModifiedAttribute;
         $value = null;
         if (isset($object[$name])) {
             $value = $object[$name];
