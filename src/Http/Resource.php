@@ -99,7 +99,7 @@ class Resource
 
                         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
                             if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmtmtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($lastModified . $filename)) {
-                                throw new NotModified();
+                                throw new NotModified(null);
                             }
                         }
                     }
@@ -112,6 +112,8 @@ class Resource
             }
             $resource::render($resource, $response);
 
+        } catch (NotModified $e) {
+            header("{$_SERVER['SERVER_PROTOCOL']} $e->code $e->reason");
         } catch (Redirection $e) {
             header("Location: $e->location", true, $e->code);
             echo $e->getMessage();
