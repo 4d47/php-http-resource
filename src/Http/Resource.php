@@ -39,6 +39,14 @@ class Resource
     public static $layout = 'layout.php';
 
     /**
+     * The property name containing the last modified
+     * datetime in the in `get` response.
+     *
+     * @var string
+     */
+    public static $lastModifiedProperty = null;
+
+    /**
      * The base directory of views script.
      *
      * @var string
@@ -75,7 +83,6 @@ class Resource
             foreach ($resources as $className) {
                 if ($params = $className::match($path)) {
                     $resource = $factory($className);
-                    // if get and getLastModified() caching opportunity here ...
                     if (!method_exists($resource, $_SERVER['REQUEST_METHOD']))
                         throw new MethodNotAllowed();
                     // assign non numeric params to resource and initialize
@@ -85,6 +92,18 @@ class Resource
                     }
                     $resource->init();
                     $response = $resource->{ $_SERVER['REQUEST_METHOD'] }();
+                    // caching headers
+                    if ($lastModified = self::getLastModified($response)) {
+                        $gmtmtime = gmdate('r', $lastModified);
+                        header('ETag: "' . md5($lastModified . $filename) . '"');
+                        header("Last-Modified: $gmtmtime");
+
+                        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+                            if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmtmtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($lastModified . $filename)) {
+                                throw new NotModified();
+                            }
+                        }
+                    }
                     break;
                 }
             }
@@ -187,16 +206,6 @@ class Resource
     }
 
     /**
-     * The date and time at which this resource was last modified.
-     *
-     * @return \DateTime
-     */
-    public function getLastModified()
-    {
-        return new \DateTime();
-    }
-
-    /**
      * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.4
      */
     public function head()
@@ -275,5 +284,27 @@ class Resource
     protected static function classToPath($className)
     {
         return str_replace('\\', '/', strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $className)));
+    }
+
+    /**
+     * Retrieve a last modified timestamp from property or index of $object.
+     *
+     * @param object|array
+     * @return timestamp
+     */
+    private static function getLastModified($object)
+    {
+        $name = self::$lastModifiedProperty;
+        $value = null;
+        if (isset($object[$name])) {
+            $value = $object[$name];
+        }
+        if (isset($object->$name)) {
+            $value = $object->$name;
+        }
+        if (is_string($value)) {
+            $value = strtotime($value);
+        }
+        return $value;
     }
 }
