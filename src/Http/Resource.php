@@ -95,7 +95,6 @@ class Resource
                     // caching headers
                     if ($lastModified = self::getLastModified($response)) {
                         $gmtmtime = gmdate('r', $lastModified);
-                        header('ETag: "' . md5($lastModified . $filename) . '"');
                         header("Last-Modified: $gmtmtime");
 
                         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
