@@ -94,13 +94,8 @@ class Resource
                     $response = $resource->{ $_SERVER['REQUEST_METHOD'] }();
                     // caching headers
                     if ($lastModified = self::getLastModified($response)) {
-                        $gmtmtime = gmdate('r', $lastModified);
-                        header("Last-Modified: $gmtmtime");
-
-                        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) || isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
-                            if ($_SERVER['HTTP_IF_MODIFIED_SINCE'] == $gmtmtime || str_replace('"', '', stripslashes($_SERVER['HTTP_IF_NONE_MATCH'])) == md5($lastModified . $filename)) {
-                                throw new NotModified(null);
-                            }
+                        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
+                            throw new NotModified(null);
                         }
                     }
                     break;
@@ -109,6 +104,9 @@ class Resource
 
             if (empty($resource)) {
                 throw new NotFound();
+            }
+            if ($lastModified) {
+                header("Last-Modified: $lastModified");
             }
             $resource::render($resource, $response);
 
@@ -305,6 +303,9 @@ class Resource
         }
         if (is_string($value)) {
             $value = strtotime($value);
+        }
+        if ($value) {
+            $value = gmdate('r', $value);
         }
         return $value;
     }
