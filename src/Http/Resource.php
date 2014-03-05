@@ -297,10 +297,10 @@ class Resource
     {
         $name = self::$lastModifiedAttribute;
         $value = null;
-        if (isset($object[$name])) {
+        if (is_array($object) && array_key_exists($name, $object)) {
             $value = $object[$name];
         }
-        if (isset($object->$name)) {
+        if (is_object($object) && property_exists($object, $name)) {
             $value = $object->$name;
         }
         if (is_string($value)) {
