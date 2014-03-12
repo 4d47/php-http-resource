@@ -90,4 +90,20 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $result = ob_get_clean();
         $this->assertSame('Foo!', $result);
     }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandlerFactory()
+    {
+        ob_start();
+        Resource::handle(array('Http\ResourceStub'), array($this, 'make'));
+        $result = ob_get_clean();
+        $this->assertSame('Foo!', $result);
+    }
+
+    public function make($className)
+    {
+        return new $className();
+    }
 }
