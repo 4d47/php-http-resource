@@ -5,9 +5,11 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
-        $_SERVER['SERVER_PORT'] = '80';
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.0';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['SERVER_NAME'] = 'example.com';
-        Resource::$path = '/';
+        $_SERVER['SERVER_PORT'] = '80';
+        $_SERVER['REQUEST_URI'] = '/';
     }
 
     public function testMatch()
@@ -76,5 +78,16 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('http://example.com/a', Resource::url('a'));
         Resource::$base[] = 'admin';
         $this->assertSame('http://example.com/a', Resource::url('a'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandle()
+    {
+        ob_start();
+        Resource::handle(array('Http\ResourceStub'));
+        $result = ob_get_clean();
+        $this->assertSame('Foo!', $result);
     }
 }
