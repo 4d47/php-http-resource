@@ -82,7 +82,7 @@ class Resource
             // lookup $resources and call appropriate method
             foreach ($resources as $className) {
                 if ($params = $className::match($path)) {
-                    $resource = $factory($className);
+                    $resource = call_user_func($factory, $className);
                     if (!method_exists($resource, $_SERVER['REQUEST_METHOD']))
                         throw new MethodNotAllowed();
                     // assign non numeric params to resource and initialize
