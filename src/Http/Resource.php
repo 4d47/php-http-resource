@@ -212,6 +212,13 @@ class Resource
         return $this->get();
     }
 
+    /**
+     * @see http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.3
+     */
+    public function get()
+    {
+        ;
+    }
 
     /**
      * Render a $resource's $response data to the browser.
