@@ -31,14 +31,6 @@ class Resource
     public static $base = array();
 
     /**
-     * The layout script filename to search for
-     * or <code>false</code> to disable.
-     *
-     * @var null|string
-     */
-    public static $layout = 'layout.php';
-
-    /**
      * The attribute name containing the last modified
      * datetime in the in `get` response.
      *
@@ -66,25 +58,28 @@ class Resource
         try {
             $factory = $factory ?: function ($className) { return new $className(); };
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
             if (!empty($_SERVER['REDIRECT_BASE'])) {
                 $path = substr($path, strlen(rtrim($_SERVER['REDIRECT_BASE'], '/')));
             }
 
             // begin opinionated here ...
             if (preg_match('|.+/$|', $path)) {
-                throw new MovedPermanently( rtrim($path, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
+                throw new MovedPermanently( static::url() . trim($path, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
             }
 
             // method override
-            if (isset($_GET['_method']) && in_array(strtoupper($_GET['_method']), array('GET', 'POST', 'PUT', 'DELETE', 'HEAD')))
+            if (isset($_GET['_method']) && in_array(strtoupper($_GET['_method']), array('GET', 'POST', 'PUT', 'DELETE', 'HEAD'))) {
                 $_SERVER['REQUEST_METHOD'] = strtoupper($_GET['_method']);
+            }
 
             // lookup $resources and call appropriate method
             foreach ($resources as $className) {
                 if ($params = $className::match($path)) {
                     $resource = call_user_func($factory, $className);
-                    if (!method_exists($resource, $_SERVER['REQUEST_METHOD']))
+                    if (!method_exists($resource, $_SERVER['REQUEST_METHOD'])) {
                         throw new MethodNotAllowed();
+                    }
                     // assign non numeric params to resource and initialize
                     foreach ($params as $key => $param) {
                         if (!is_numeric($key))
@@ -108,23 +103,24 @@ class Resource
             if ($lastModified) {
                 header("Last-Modified: $lastModified");
             }
-            $resource::render($resource, $response);
 
-        } catch (NotModified $e) {
-            header("{$_SERVER['SERVER_PROTOCOL']} $e->code $e->reason");
-        } catch (Redirection $e) {
-            header("Location: $e->location", true, $e->code);
-            echo $e->getMessage();
+        } catch (NotModified $resource) {
+            header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
+        } catch (Redirection $resource) {
+            header("Location: $resource->location", true, $resource->code);
+            echo $resource->getMessage();
         } catch (Exception $resource) {
-            $response = array('exception' => $resource);
+            $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         } catch (\Exception $resource) {
             $resource = new InternalServerError($resource->getMessage(), $resource);
-            $response = array('exception' => $resource);
+            $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         }
-        if ($resource instanceof \Http\Error) {
-            static::render($resource, $response);
+        if ($resource instanceof self) {
+            $resource->render($response);
+        } else if ($resource instanceof Http\Error) {
+            static::renderResource($resource, $response);
         }
     }
 
@@ -221,42 +217,47 @@ class Resource
     }
 
     /**
+     * Renders a $response using `renderResource` strategy.
+     *
+     * @param mixed data resulted from the resource method
+     */
+    public function render($response)
+    {
+        static::renderResource($this, $response);
+    }
+
+    /**
      * Render a $resource's $response data to the browser.
      * Provides a basic two step view implementation.
      *
      * @param \Http\Resource|\Http\Exception
      * @param mixed data resulted from the resource method
-     * @return void
      */
-    protected static function render($resource, $response)
+    protected static function renderResource($resource, $response)
     {
         // first step, logical presentation
         $resourceClass = get_class($resource);
-        ob_start();
+        $content = '';
         do {
             $name = static::classToPath($resourceClass);
             $path = static::$viewsDir . "/$name.php";
             if (file_exists($path)) {
-                static::renderFile($path, $response, '');
+                $content = static::renderFile($path, $response);
                 break;
             }
             // try parent classes
         } while (false != ($resourceClass = get_parent_class($resourceClass)));
-        $content = ob_get_clean();
 
         // second step, layout formatting
-        if (empty($resource::$layout)) {
-            echo $content;
-        } else {
-            $name = static::classToPath(get_class($resource));
-            do {
-                $name = dirname($name);
-                if (file_exists(static::$viewsDir . "/$name/{$resource::$layout}")) {
-                    static::renderFile(static::$viewsDir . "/$name/{$resource::$layout}", $response, $content);
-                    break;
-                }
-            } while ($name != '.');
-        }
+        $name = static::classToPath(get_class($resource));
+        do {
+            $name = dirname($name);
+            if (file_exists(static::$viewsDir . "/$name/layout.php")) {
+                $content = static::renderFile(static::$viewsDir . "/$name/layout.php", array('content' => $content));
+                break;
+            }
+        } while ($name != '.');
+        echo $content;
     }
 
     /**
@@ -264,14 +265,15 @@ class Resource
      *
      * @param string Filename
      * @param array|object Variables to be extracted
-     * @param string $content variable
+     * @return string
      */
     protected static function renderFile()
     {
+        ob_start();
         extract($GLOBALS);
         extract((array) func_get_arg(1));
-        $content = func_get_arg(2);
         require func_get_arg(0);
+        return ob_get_clean();
     }
 
     /**

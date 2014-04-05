@@ -80,15 +80,34 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('http://example.com/a', Resource::url('a'));
     }
 
+    public function testDefaultMethods()
+    {
+        $resource = new Resource();
+        $resource->head();
+        $resource->get();
+        $this->assertFalse(method_exists('Http\Resource', 'post'));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleRedirectTrailingSlash()
+    {
+        if (!extension_loaded('xdebug')) {
+            $this->markTestSkipped('Requires xdebug to test headers');
+            return;
+        }
+        $_SERVER['REQUEST_URI'] = '/foo/';
+        $this->handleResourceStub();
+        $this->assertSame(array('Location: http://example.com/foo'), xdebug_get_headers());
+    }
+
     /**
      * @runInSeparateProcess
      */
     public function testHandle()
     {
-        ob_start();
-        Resource::handle(array('Http\ResourceStub'));
-        $result = ob_get_clean();
-        $this->assertSame('Foo!', $result);
+        $this->assertSame('Foo!', $this->handleResourceStub());
     }
 
     /**
@@ -96,14 +115,18 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandlerFactory()
     {
-        ob_start();
-        Resource::handle(array('Http\ResourceStub'), array($this, 'make'));
-        $result = ob_get_clean();
-        $this->assertSame('Foo!', $result);
+        $this->assertSame('Foo!', $this->handleResourceStub(array($this, 'make')));
     }
 
     public function make($className)
     {
         return new $className();
+    }
+
+    private function handleResourceStub($factory = null)
+    {
+        ob_start();
+        Resource::handle(array('Http\ResourceStub'), $factory);
+        return trim(ob_get_clean());
     }
 }
