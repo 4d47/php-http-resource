@@ -119,7 +119,7 @@ class Resource
         }
         if ($resource instanceof self) {
             $resource->render($response);
-        } else if ($resource instanceof Http\Error) {
+        } else if ($resource instanceof \Http\Error) {
             static::renderResource($resource, $response);
         }
     }

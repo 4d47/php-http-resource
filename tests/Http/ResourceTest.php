@@ -10,6 +10,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_NAME'] = 'example.com';
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
+        Resource::$viewsDir = 'tests/views';
     }
 
     public function testMatch()
@@ -100,6 +101,15 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['REQUEST_URI'] = '/foo/';
         $this->handleResourceStub();
         $this->assertSame(array('Location: http://example.com/foo'), xdebug_get_headers());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleNotFound()
+    {
+        $_SERVER['REQUEST_URI'] = '/not-found';
+        $this->assertSame('Oups Not Found', $this->handleResourceStub());
     }
 
     /**
