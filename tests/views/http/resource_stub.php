@@ -1,1 +1,1 @@
-<?= $name ?>!
+<?php echo $name ?>!
