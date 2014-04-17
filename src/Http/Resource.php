@@ -113,6 +113,7 @@ class Resource
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         } catch (\Exception $resource) {
+            static::onError($resource);
             $resource = new InternalServerError($resource->getMessage(), $resource);
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
@@ -285,6 +286,16 @@ class Resource
     protected static function classToPath($className)
     {
         return str_replace('\\', '/', strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $className)));
+    }
+
+    /**
+     * Processing an exception before the view is rendered.
+     *
+     * @param $error
+     */
+    protected static function onError(\Exception $error)
+    {
+        error_log($error);
     }
 
     /**
