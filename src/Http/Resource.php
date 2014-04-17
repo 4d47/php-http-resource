@@ -46,6 +46,11 @@ class Resource
     public static $viewsDir = 'views';
 
     /**
+     * Callback to handle exceptions
+     */
+    public static $onError = 'error_log';
+
+    /**
      * Route to a matching resource, calling the appropriate
      * HTTP method and render() the response.
      *
@@ -112,9 +117,9 @@ class Resource
         } catch (Exception $resource) {
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
-        } catch (\Exception $resource) {
-            static::onError($resource);
-            $resource = new InternalServerError($resource->getMessage(), $resource);
+        } catch (\Exception $e) {
+            call_user_func($resource::$onError, $e);
+            $resource = new InternalServerError($e->getMessage(), $e);
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         }
@@ -286,16 +291,6 @@ class Resource
     protected static function classToPath($className)
     {
         return str_replace('\\', '/', strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $className)));
-    }
-
-    /**
-     * Processing an exception before the view is rendered.
-     *
-     * @param $error
-     */
-    protected static function onError(\Exception $error)
-    {
-        error_log($error);
     }
 
     /**

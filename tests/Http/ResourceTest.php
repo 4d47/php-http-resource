@@ -115,6 +115,17 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     /**
      * @runInSeparateProcess
      */
+    public function testHandleInternalServerError()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'DELETE'; // will trigger an exception on the stub
+        $this->assertEmpty(ResourceStub::$errors);
+        $this->assertSame('Oups Internal Server Error', $this->handleResourceStub());
+        $this->assertNotEmpty(ResourceStub::$errors, 'onError should be called');
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
     public function testHandle()
     {
         $this->assertSame('Foo!', $this->handleResourceStub());
