@@ -8,32 +8,33 @@ So one day I decided to not choose any web framework. Just for fun. I was then l
 - A front controller
 - 2 step views
 
+
     <?php
     namespace App;
 
-    # First you define and name a class of URLs; that is a set of documents
-    # that share the same structure of data and operations. Instances of the
-    # class will represents a specific URL.
+    // First you define and name a class of URLs; that is a set of documents
+    // that share the same structure of data and operations. Instances of the
+    // class will represents a specific URL.
 
     class Product extends \Http\Resource {
 
-        # The `$path` static variable holds the URL pattern that this resource
-        # match.  If matched, the instance will have it's properties assigned 
-        # with the pattern variables.  Parens can be used for optional variables
-        # and star to match anything. eg. `/foo((/:bar)/*)`
+        // The `$path` static variable holds the URL pattern that this resource
+        // match.  If matched, the instance will have it's properties assigned 
+        // with the pattern variables.  Parens can be used for optional variables
+        // and star to match anything. eg. `/foo((/:bar)/*)`
 
         public static $path = '/products/:name';
 
-        # The `init` method is called right after the resource is constructed 
-        # and all it's variables are assigned to it.
+        // The `init` method is called right after the resource is constructed 
+        // and all it's variables are assigned to it.
 
         public function init() {
             $this->name;
         }
 
-        # Then you implement HTTP methods, GET, POST, PUT, etc
-        # to return the data for the view. Server errors (5xx), client errors (4xx)
-        # and redirects (3xx) are sent by throwing [http exception](http://github.com/4d47/php-http-exceptions).
+        // Then you implement HTTP methods, GET, POST, PUT, etc
+        // to return the data for the view. Server errors (5xx), client errors (4xx)
+        // and redirects (3xx) are sent by throwing [http exception](http://github.com/4d47/php-http-exceptions).
 
         public function get() {
             if ($this->name == 'bazam')
