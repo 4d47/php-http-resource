@@ -2,13 +2,6 @@
 
 > **The PHP paradox**: PHP is a web framework. Any attempt at using PHP will result in building a web framework.
 
-
-So one day I choosed not to choose any web framework. I was left missing:
-
-1. Clean URLs
-2. A front controller
-3. 2 step views
-
 ## Install
 
 ```bash
@@ -33,13 +26,6 @@ class Product extends \Http\Resource {
     # colon denote a variable and a star matches anything. eg: `/foo((/:bar)/*)`
 
     public static $path = '/products/:name';
-
-    # The `init` method is called right after the resource is instanciated 
-    # and all it's url variables are assigned to it.
-
-    public function init() {
-        $this->name;
-    }
 
     # Then you implement HTTP methods, GET, POST, PUT, etc
     # to return the data to build the resource representation.
