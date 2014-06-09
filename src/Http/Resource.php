@@ -23,14 +23,6 @@ class Resource
     public static $path = '/';
 
     /**
-     * List of Request-URI segments prepended to `$path`.
-     * Can be used to configure resource on a different base path.
-     *
-     * @var array
-     */
-    public static $base = array();
-
-    /**
      * The attribute name containing the last modified
      * datetime in the in `get` response.
      *
@@ -64,13 +56,9 @@ class Resource
             $factory = $factory ?: function ($className) { return new $className(); };
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-            if (!empty($_SERVER['REDIRECT_BASE'])) {
-                $path = substr($path, strlen(rtrim($_SERVER['REDIRECT_BASE'], '/')));
-            }
-
             // begin opinionated here ...
             if (preg_match('|.+/$|', $path)) {
-                throw new MovedPermanently( static::url() . trim($path, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
+                throw new MovedPermanently( rtrim($path, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
             }
 
             // method override
@@ -136,11 +124,8 @@ class Resource
      * @param string Request-URI to match against
      * @return array of URI pattern variables
      */
-    public static function match($path)
+    public static function match($uri)
     {
-        $base = static::$base ? call_user_func_array(array('static', 'path'), static::$base) : '';
-        $route = $base . static::$path;
-
         $replacements = array(
             '/\(/' => '(',
             '/\)/' => ')?',
@@ -148,10 +133,11 @@ class Resource
             '/:(\w+)/' => '(?P<$1>[^./]+)',
             '/\*/' => '(?P<rest>.*?)',
         );
+        $route = static::$path;
         foreach ($replacements as $pattern => $replacement) {
             $route = preg_replace($pattern, $replacement, $route);
         }
-        preg_match("{^$route$}", $path, $matches);
+        preg_match("{^$route$}", $uri, $matches);
         // filter numeric key > 1 in results because it is ugly
         foreach ($matches as $key => $value) {
             if (is_integer($key) && $key >= 1) {
@@ -159,43 +145,6 @@ class Resource
             }
         }
         return $matches;
-    }
-
-    /**
-     * Link to another Resource instance
-     */
-    public static function link()
-    {
-        $segments = array_merge(static::$base, func_get_args());
-        return call_user_func_array(array('static', 'url'), $segments);
-    }
-
-    /**
-     * Build path relative to install directory
-     */
-    public static function path()
-    {
-        $segments = func_get_args();
-        if (!empty($_SERVER['REDIRECT_BASE'])) {
-            array_unshift($segments, trim($_SERVER['REDIRECT_BASE'], '/'));
-        }
-        return '/' . implode('/', $segments);
-    }
-
-    /**
-     * Absolute URL version of path
-     */
-    public static function url()
-    {
-        $ssl = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
-        $protocol = 'http' . ($ssl ? 's' : '');
-        $port = $_SERVER['SERVER_PORT'];
-        $port = ((!$ssl && $port == '80') || ($ssl && $port == '443')) ? '' : ":$port";
-        # this is ternary operator festival, please dont blink
-        $host = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : $_SERVER['SERVER_NAME'];
-        $host = strstr($host, ':') ? $host : $host . $port;
-        $uri = call_user_func_array(array('static', 'path'), func_get_args());
-        return "$protocol://$host$uri";
     }
 
     /**

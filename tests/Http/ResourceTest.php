@@ -55,32 +55,6 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(array('/a.png', 'name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
     }
 
-    public function testLink()
-    {
-        $this->assertSame('http://example.com/', Resource::link());
-        Resource::$base[] = 'admin';
-        $this->assertSame('http://example.com/admin/a', Resource::link('a'));
-    }
-
-    public function testPath()
-    {
-        $this->assertSame('/', Resource::path());
-        $this->assertSame('/a/b/c', Resource::path('a', 'b', 'c'));
-        $this->assertSame('/a', Resource::path('a'));
-        $_SERVER['REDIRECT_BASE'] = '/admin/';
-        $this->assertSame('/admin', Resource::path());
-        $this->assertSame('/admin/a', Resource::path('a'));
-        Resource::$base[] = 'admin';
-        $this->assertSame('/admin/a', Resource::path('a'));
-    }
-
-    public function testUrl()
-    {
-        $this->assertSame('http://example.com/a', Resource::url('a'));
-        Resource::$base[] = 'admin';
-        $this->assertSame('http://example.com/a', Resource::url('a'));
-    }
-
     public function testDefaultMethods()
     {
         $resource = new Resource();
@@ -100,7 +74,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         }
         $_SERVER['REQUEST_URI'] = '/foo/';
         $this->handleResourceStub();
-        $this->assertSame(array('Location: http://example.com/foo'), xdebug_get_headers());
+        $this->assertSame(array('Location: /foo'), xdebug_get_headers());
     }
 
     /**
