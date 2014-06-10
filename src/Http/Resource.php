@@ -168,7 +168,7 @@ class Resource
      */
     public function get()
     {
-        ;
+        throw new \Http\MethodNotAllowed();
     }
 
     /**

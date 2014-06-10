@@ -55,12 +55,23 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(array('/a.png', 'name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
     }
 
-    public function testDefaultMethods()
+
+    /**
+     * @expectedException \Http\MethodNotAllowed
+     */
+    public function testHead()
     {
         $resource = new Resource();
         $resource->head();
-        $resource->get();
+    }
+
+    public function testDefaultMethods()
+    {
+        $this->assertTrue(method_exists('Http\Resource', 'head'));
+        $this->assertTrue(method_exists('Http\Resource', 'get'));
         $this->assertFalse(method_exists('Http\Resource', 'post'));
+        $this->assertFalse(method_exists('Http\Resource', 'put'));
+        $this->assertFalse(method_exists('Http\Resource', 'delete'));
     }
 
     /**
