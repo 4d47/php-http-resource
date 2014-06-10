@@ -197,7 +197,7 @@ class Resource
             $name = static::classToPath($resourceClass);
             $path = static::$viewsDir . "/$name.php";
             if (file_exists($path)) {
-                $content = static::renderFile($path, $response);
+                $content = static::partial($path, $response);
                 break;
             }
             // try parent classes
@@ -208,7 +208,7 @@ class Resource
         do {
             $name = dirname($name);
             if (file_exists(static::$viewsDir . "/$name/layout.php")) {
-                $content = static::renderFile(static::$viewsDir . "/$name/layout.php", array('content' => $content));
+                $content = static::partial(static::$viewsDir . "/$name/layout.php", array('content' => $content));
                 break;
             }
         } while ($name != '.');
@@ -222,7 +222,7 @@ class Resource
      * @param array|object Variables to be extracted
      * @return string
      */
-    protected static function renderFile()
+    protected static function partial()
     {
         ob_start();
         extract($GLOBALS);
