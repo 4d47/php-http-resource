@@ -47,8 +47,17 @@ class Resource
 
     /**
      * Callback to handle exceptions
+     *
+     * @var callback
      */
     public static $onError = 'error_log';
+
+    /**
+     * Should the layout be used in render.
+     *
+     * @var boolean
+     */
+    public static $layout = true;
 
     /**
      * Route to a matching resource, calling the appropriate
@@ -255,14 +264,16 @@ class Resource
         } while (false != ($resourceClass = get_parent_class($resourceClass)));
 
         // second step, layout formatting
-        $name = static::classToPath(get_class($resource));
-        do {
-            $name = dirname($name);
-            if (file_exists(static::$viewsDir . "/$name/layout.php")) {
-                $content = static::renderFile(static::$viewsDir . "/$name/layout.php", array('content' => $content));
-                break;
-            }
-        } while ($name != '.');
+        if (static::$layout) {
+            $name = static::classToPath(get_class($resource));
+            do {
+                $name = dirname($name);
+                if (file_exists(static::$viewsDir . "/$name/layout.php")) {
+                    $content = static::renderFile(static::$viewsDir . "/$name/layout.php", array('content' => $content));
+                    break;
+                }
+            } while ($name != '.');
+        }
         echo $content;
     }
 
