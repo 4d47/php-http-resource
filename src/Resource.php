@@ -207,8 +207,9 @@ class Resource
         $name = static::classToPath(get_class($resource));
         do {
             $name = dirname($name);
-            if (file_exists(static::$viewsDir . "/$name/layout.php")) {
-                $content = static::partial(static::$viewsDir . "/$name/layout.php", array('content' => $content));
+            $path = static::$viewsDir . "/$name/layout.php";
+            if (file_exists($path)) {
+                $content = static::partial($path, array('content' => $content));
                 break;
             }
         } while ($name != '.');
