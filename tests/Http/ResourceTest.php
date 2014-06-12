@@ -11,6 +11,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
         Resource::$viewsDir = 'tests/views';
+        Resource::$base = '';
     }
 
     public function testMatch()
@@ -55,6 +56,54 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(array('/a.png', 'name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
     }
 
+    public function testLink()
+    {
+        Resource::$path = '/';
+        $this->assertSame('/', Resource::link(array()));
+
+        Resource::$path = '/products/:name';
+        $this->assertSame('/products/yoyo', Resource::link(array('name' => 'yoyo')));
+
+        Resource::$path = '/a/*';
+        $this->assertSame('/a/test', Resource::link(array('*' => 'test')));
+
+        Resource::$path = '/a(/*)';
+        $this->assertSame('/a/test', Resource::link(array('*' => 'test')));
+        $this->assertSame('/a', Resource::link(array()));
+
+        Resource::$path = '/:foo/:bar/:baz';
+        $this->assertSame('/a/b/c', Resource::link(array('foo' => 'a', 'bar' => 'b', 'baz' => 'c')));
+
+        Resource::$path = '/:controller(/:action(/:id))';
+        $this->assertSame('/one', Resource::link(array('controller' => 'one')));
+        $this->assertSame('/one/two', Resource::link(array('controller' => 'one', 'action' => 'two')));
+        $this->assertSame('/one/two/12', Resource::link(array('controller' => 'one', 'action' => 'two', 'id' => 12)));
+
+        Resource::$path = '/:file(.:format)';
+        $this->assertSame('/one.xml', Resource::link(array('file' => 'one', 'format' => 'xml')));
+
+        Resource::$base = '/foo';
+        Resource::$path = '/something';
+        $this->assertSame('/foo/something', Resource::link());
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testLinkMissingNameParam()
+    {
+        Resource::$path = '/:name/:id';
+        Resource::link(array('name' => 'test'));
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
+    public function testLinkMissingRestParam()
+    {
+        Resource::$path = '/:name/*';
+        Resource::link(array('name' => 'test'));
+    }
 
     /**
      * @expectedException \Http\MethodNotAllowed

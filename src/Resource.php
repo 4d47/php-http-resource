@@ -23,6 +23,13 @@ class Resource
     public static $path = '/';
 
     /**
+     * Base of $path.
+     *
+     * @var string
+     */
+    public static $base = '';
+
+    /**
      * The attribute name containing the last modified
      * datetime in the in `get` response.
      *
@@ -133,7 +140,7 @@ class Resource
             '/:(\w+)/' => '(?P<$1>[^./]+)',
             '/\*/' => '(?P<rest>.*?)',
         );
-        $route = static::$path;
+        $route = static::$base . static::$path;
         foreach ($replacements as $pattern => $replacement) {
             $route = preg_replace($pattern, $replacement, $route);
         }
@@ -145,6 +152,27 @@ class Resource
             }
         }
         return $matches;
+    }
+
+    /**
+     * Substitutes $vars in the $path.
+     *
+     * @param array $vars
+     */
+    public static function link(array $vars = array())
+    {
+        $result = static::$base . static::$path;
+        foreach ($vars as $name => $value) {
+            $pattern = $name == '*' ? '/\*/' : "/:$name/";
+            $result = preg_replace($pattern, $value, $result);
+        }
+        // OMG! that's the most horrific regexes I've seen !
+        $result = preg_replace('/\([^(]*[:*].*\)/', '', $result);
+        $result = preg_replace('/[()]/', '', $result);
+        if (preg_match('/[:*]/', $result)) {
+            throw new \LogicException("Incomplete link: $result");
+        }
+        return $result;
     }
 
     /**
@@ -195,9 +223,9 @@ class Resource
         $content = '';
         do {
             $name = static::classToPath($resourceClass);
-            $path = static::$viewsDir . "/$name.php";
-            if (file_exists($path)) {
-                $content = static::partial($path, $response);
+            $file = static::$viewsDir . "/$name.php";
+            if (file_exists($file)) {
+                $content = static::partial($file, $response);
                 break;
             }
             // try parent classes
@@ -207,9 +235,9 @@ class Resource
         $name = static::classToPath(get_class($resource));
         do {
             $name = dirname($name);
-            $path = static::$viewsDir . "/$name/layout.php";
-            if (file_exists($path)) {
-                $content = static::partial($path, array('content' => $content));
+            $file = static::$viewsDir . "/$name/layout.php";
+            if (file_exists($file)) {
+                $content = static::partial($file, array('content' => $content));
                 break;
             }
         } while ($name != '.');
