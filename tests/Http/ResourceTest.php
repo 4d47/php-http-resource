@@ -10,8 +10,8 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_NAME'] = 'example.com';
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
-        \Http\ResourceStub::$viewsDir = 'tests/views';
-        \Http\ResourceStub::$layout = true;
+        ResourceStub::$viewsDir = 'tests/views';
+        ResourceStub::$layout = true;
     }
 
     public function testMatch()
