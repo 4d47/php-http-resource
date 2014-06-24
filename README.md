@@ -35,7 +35,7 @@ class Product extends \Http\Resource {
     public function get() {
         if ($this->name == 'bazam')
             throw new \Http\NotFound();
-        return array('name' => $this->name);
+        return ['name' => $this->name];
     }
 }
 ```
@@ -60,5 +60,5 @@ Finally you bootstrap everything in your `index.php` by handling
 the list of your resources.
 
 ```php
-\Http\Resource::handle(array('App\Product'));
+\Http\Resource::handle(['App\Product']);
 ```
