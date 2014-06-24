@@ -6,10 +6,11 @@ class ResourceStub extends Resource
     public static $path = '/';
     public static $errors = array();
     public static $onError = array('\Http\ResourceStub', 'onError');
+    public static $result = array();
 
     public function get()
     {
-        return array('name' => 'Foo', 'lastModified' => 1);
+        return static::$result;
     }
 
     public function delete()

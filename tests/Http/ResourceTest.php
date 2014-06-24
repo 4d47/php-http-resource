@@ -13,6 +13,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
         \Http\ResourceStub::$viewsDir = 'tests/views';
         \Http\ResourceStub::$layout = true;
+        \Http\ResourceStub::$result = array('name' => 'Foo');
     }
 
     public function testMatch()
@@ -189,7 +190,28 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleNotModified()
     {
         $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
+        \Http\ResourceStub::$result['lastModified'] = 1;
         $this->assertSame('', $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleNotModifiedStdClass()
+    {
+        $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
+        \Http\ResourceStub::$result = new \stdClass();
+        \Http\ResourceStub::$result->name = 'Foo';
+        \Http\ResourceStub::$result->lastModified = 'Thu, 01 Jan 1970 00:00:01 +0000';
+        $this->assertSame('', $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleNoLayout()
+    {
+        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub(null, array('\Foo')));
     }
 
     public function make($className)
@@ -197,10 +219,10 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         return new $className();
     }
 
-    private function handleResourceStub($factory = null)
+    private function handleResourceStub($factory = null, $classes = array('Http\ResourceStub'))
     {
         ob_start();
-        Resource::handle(array('Http\ResourceStub'), $factory);
+        Resource::handle($classes, $factory);
         return trim(ob_get_clean());
     }
 }
