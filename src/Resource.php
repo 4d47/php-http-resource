@@ -46,8 +46,17 @@ class Resource
 
     /**
      * Callback to handle exceptions
+     *
+     * @var callback
      */
     public static $onError = 'error_log';
+
+    /**
+     * Should the layout be used in render.
+     *
+     * @var boolean
+     */
+    public static $layout = true;
 
     /**
      * Route to a matching resource, calling the appropriate
@@ -62,6 +71,11 @@ class Resource
         try {
             $factory = $factory ?: function ($className) { return new $className(); };
             $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $response = null;
+
+            if ($path === false) {
+                throw new NotFound();
+            }
 
             // begin opinionated here ...
             if (preg_match('|.+/$|', $path)) {
@@ -89,19 +103,18 @@ class Resource
                     $response = $resource->{ $_SERVER['REQUEST_METHOD'] }();
                     // caching headers
                     if ($lastModified = self::getLastModified($response)) {
+                        header("Last-Modified: $lastModified");
                         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
                             throw new NotModified(null);
                         }
                     }
+
                     break;
                 }
             }
 
             if (empty($resource)) {
                 throw new NotFound();
-            }
-            if ($lastModified) {
-                header("Last-Modified: $lastModified");
             }
 
         } catch (NotModified $resource) {
@@ -145,6 +158,9 @@ class Resource
             $route = preg_replace($pattern, $replacement, $route);
         }
         preg_match("{^$route$}", $uri, $matches);
+        if (empty($matches)) {
+            return array();
+        }
         // filter numeric key > 1 in results because it is ugly
         foreach ($matches as $key => $value) {
             if (is_integer($key) && $key >= 1) {
@@ -232,15 +248,17 @@ class Resource
         } while (false != ($resourceClass = get_parent_class($resourceClass)));
 
         // second step, layout formatting
-        $name = static::classToPath(get_class($resource));
-        do {
-            $name = dirname($name);
-            $file = static::$viewsDir . "/$name/layout.php";
-            if (file_exists($file)) {
-                $content = static::partial($file, array('content' => $content));
-                break;
-            }
-        } while ($name != '.');
+        if (static::$layout) {
+            $name = static::classToPath(get_class($resource));
+            do {
+                $name = dirname($name);
+                $file = static::$viewsDir . "/$name/layout.php";
+                if (file_exists($file)) {
+                    $content = static::partial($file, array('content' => $content));
+                    break;
+                }
+            } while ($name != '.');
+        }
         echo $content;
     }
 

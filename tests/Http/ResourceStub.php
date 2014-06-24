@@ -9,7 +9,7 @@ class ResourceStub extends Resource
 
     public function get()
     {
-        return array('name' => 'Foo');
+        return array('name' => 'Foo', 'lastModified' => 1);
     }
 
     public function delete()

@@ -10,8 +10,9 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_NAME'] = 'example.com';
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
-        Resource::$viewsDir = 'tests/views';
-        Resource::$base = '';
+        unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+        \Http\ResourceStub::$viewsDir = 'tests/views';
+        \Http\ResourceStub::$layout = true;
     }
 
     public function testMatch()
@@ -143,7 +144,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleNotFound()
     {
         $_SERVER['REQUEST_URI'] = '/not-found';
-        $this->assertSame('Oups Not Found', $this->handleResourceStub());
+        $this->assertSame('<p>Oups Not Found</p>', $this->handleResourceStub());
     }
 
     /**
@@ -153,15 +154,24 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['REQUEST_METHOD'] = 'DELETE'; // will trigger an exception on the stub
         $this->assertEmpty(ResourceStub::$errors);
-        $this->assertSame('Oups Internal Server Error', $this->handleResourceStub());
+        $this->assertSame('<p>Oups Internal Server Error</p>', $this->handleResourceStub());
         $this->assertNotEmpty(ResourceStub::$errors, 'onError should be called');
     }
 
     /**
      * @runInSeparateProcess
      */
-    public function testHandle()
+    public function testHandleSimple()
     {
+        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleWithoutLayout()
+    {
+        Resource::$layout = false;
         $this->assertSame('Foo!', $this->handleResourceStub());
     }
 
@@ -170,7 +180,16 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandlerFactory()
     {
-        $this->assertSame('Foo!', $this->handleResourceStub(array($this, 'make')));
+        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub(array($this, 'make')));
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleNotModified()
+    {
+        $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
+        $this->assertSame('', $this->handleResourceStub());
     }
 
     public function make($className)
