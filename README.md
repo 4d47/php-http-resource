@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-composer require 4d47/http-resource:1.*
+composer require 4d47/http-resource:2.*
 ```
 
 ## Usage
@@ -41,10 +41,10 @@ class Product extends \Http\Resource {
 ```
     
 
-Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The data is `extract` before being included.
+Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The data is `extract` before being included. `link` is used to reference back resource. 
 
 ```php
-<p><?= $name ?></p>
+<a href="<?= \App\Product::link(['name' => $name]) ?>"><?= ucfirst($name) ?></a>
 ```
 
 If there is a file named `layout.php` in the views subpath, it will be used. 
