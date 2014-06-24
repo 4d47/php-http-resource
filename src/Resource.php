@@ -102,7 +102,7 @@ class Resource
                     $resource->init();
                     $response = $resource->{ $_SERVER['REQUEST_METHOD'] }();
                     // caching headers
-                    if ($lastModified = self::getLastModified($response)) {
+                    if ($lastModified = static::getLastModified($response)) {
                         header("Last-Modified: $lastModified");
                         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
                             throw new NotModified(null);
@@ -131,7 +131,7 @@ class Resource
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         }
-        if ($resource instanceof self) {
+        if ($resource instanceof static) {
             $resource->render($response);
         } else if ($resource instanceof \Http\Error) {
             static::renderResource($resource, $response);
@@ -297,7 +297,7 @@ class Resource
      */
     private static function getLastModified($object)
     {
-        $name = self::$lastModifiedAttribute;
+        $name = static::$lastModifiedAttribute;
         $value = null;
         if (is_array($object) && array_key_exists($name, $object)) {
             $value = $object[$name];
