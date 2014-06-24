@@ -126,7 +126,8 @@ class Resource
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
         } catch (\Exception $e) {
-            call_user_func($resource::$onError, $e);
+            $fn = isset($resource) ? $resource::$onError : static::$onError;
+            call_user_func($fn, $e);
             $resource = new InternalServerError($e->getMessage(), $e);
             $response = array('error' => $resource);
             header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");

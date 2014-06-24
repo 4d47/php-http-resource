@@ -206,14 +206,6 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame('', $this->handleResourceStub());
     }
 
-    /**
-     * @runInSeparateProcess
-     */
-    public function testHandleNoLayout()
-    {
-        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub(null, array('\Foo')));
-    }
-
     public function make($className)
     {
         return new $className();
