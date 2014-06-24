@@ -295,7 +295,7 @@ class Resource
      * @param object|array
      * @return timestamp
      */
-    private static function getLastModified($object)
+    protected static function getLastModified($object)
     {
         $name = static::$lastModifiedAttribute;
         $value = null;
