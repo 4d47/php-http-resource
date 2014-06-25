@@ -11,51 +11,51 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
         unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
-        \Http\ResourceStub::$viewsDir = 'tests/views';
-        \Http\ResourceStub::$layout = true;
-        \Http\ResourceStub::$result = array('name' => 'Foo');
+        ResourceStub::$viewsDir = 'tests/views';
+        ResourceStub::$layout = true;
+        ResourceStub::$result = array('name' => 'Foo');
     }
 
     public function testMatch()
     {
         Resource::$path = '/';
-        $this->assertSame(array(), Resource::match('/foo'));
-        $this->assertSame(array('/'), Resource::match('/'));
+        $this->assertSame(false, Resource::match('/foo'));
+        $this->assertSame(array(), Resource::match('/'));
 
         Resource::$path = '/products/:name';
-        $this->assertSame(array(), Resource::match('/about'));
-        $this->assertSame(array(), Resource::match('/products/'));
-        $this->assertSame(array('/products/a', 'name' => 'a'), Resource::match('/products/a'));
+        $this->assertSame(false, Resource::match('/about'));
+        $this->assertSame(false, Resource::match('/products/'));
+        $this->assertSame(array('name' => 'a'), Resource::match('/products/a'));
 
         Resource::$path = '/a-b/:name';
-        $this->assertSame(array('/a-b/a', 'name' => 'a'), Resource::match('/a-b/a'));
+        $this->assertSame(array('name' => 'a'), Resource::match('/a-b/a'));
 
         Resource::$path = '/a/*';
-        $this->assertSame(array('/a/foo/bar', 'rest' => 'foo/bar'), Resource::match('/a/foo/bar'));
-        $this->assertSame(array('/a/', 'rest' => ''), Resource::match('/a/'));
-        $this->assertSame(array(), Resource::match('/a'));
+        $this->assertSame(array('rest' => 'foo/bar'), Resource::match('/a/foo/bar'));
+        $this->assertSame(array('rest' => ''), Resource::match('/a/'));
+        $this->assertSame(false, Resource::match('/a'));
         Resource::$path = '/a(/*)';
-        $this->assertSame(array('/a'), Resource::match('/a'));
+        $this->assertSame(array(), Resource::match('/a'));
 
         Resource::$path = '/:foo/:bar/:baz';
-        $this->assertSame(array('/one/two/three', 'foo' => 'one', 'bar' => 'two', 'baz' => 'three'), Resource::match('/one/two/three'));
+        $this->assertSame(array('foo' => 'one', 'bar' => 'two', 'baz' => 'three'), Resource::match('/one/two/three'));
 
         Resource::$path = '/:controller(/:action(/:id))';
-        $this->assertSame(array('/one', 'controller' => 'one'), Resource::match('/one'));
-        $this->assertSame(array('/one/two', 'controller' => 'one', 'action' => 'two'), Resource::match('/one/two'));
-        $this->assertSame(array('/one/two/3', 'controller' => 'one', 'action' => 'two', 'id' => '3'), Resource::match('/one/two/3'));
-        $this->assertSame(array(), Resource::match('/one/two/3/4'));
+        $this->assertSame(array('controller' => 'one'), Resource::match('/one'));
+        $this->assertSame(array('controller' => 'one', 'action' => 'two'), Resource::match('/one/two'));
+        $this->assertSame(array('controller' => 'one', 'action' => 'two', 'id' => '3'), Resource::match('/one/two/3'));
+        $this->assertSame(false, Resource::match('/one/two/3/4'));
 
         Resource::$path = '/:file(.:format)';
-        $this->assertSame(array('/one', 'file' => 'one'), Resource::match('/one'));
-        $this->assertSame(array('/one.xml', 'file' => 'one', 'format' => 'xml'), Resource::match('/one.xml'));
+        $this->assertSame(array('file' => 'one'), Resource::match('/one'));
+        $this->assertSame(array('file' => 'one', 'format' => 'xml'), Resource::match('/one.xml'));
 
         Resource::$path = '/:controller(/:action(/:id(.:format)))';
-        $this->assertSame(array('/one', 'controller' => 'one'), Resource::match('/one'));
-        $this->assertSame(array('/one/two/3.xml', 'controller' => 'one', 'action' => 'two', 'id' => '3', 'format' => 'xml'), Resource::match('/one/two/3.xml'));
+        $this->assertSame(array('controller' => 'one'), Resource::match('/one'));
+        $this->assertSame(array('controller' => 'one', 'action' => 'two', 'id' => '3', 'format' => 'xml'), Resource::match('/one/two/3.xml'));
 
         Resource::$path = '/:name.:extension';
-        $this->assertSame(array('/a.png', 'name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
+        $this->assertSame(array('name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
     }
 
     public function testLink()
@@ -144,8 +144,26 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandleNotFound()
     {
-        $_SERVER['REQUEST_URI'] = '/not-found';
+        $_SERVER['REQUEST_URI'] = '/page/not/found';
         $this->assertSame('<p>Oups Not Found</p>', $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleWithParams()
+    {
+        $_SERVER['REQUEST_URI'] = '/bar';
+        $this->assertSame("<p>bar!\n</p>", $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleMethodNotAllowed()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'PUT';
+        $this->assertSame('<p>Oups Method Not Allowed</p>', $this->handleResourceStub());
     }
 
     /**
@@ -172,7 +190,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandleWithoutLayout()
     {
-        Resource::$layout = false;
+        ResourceStub::$layout = false;
         $this->assertSame('Foo!', $this->handleResourceStub());
     }
 
@@ -190,7 +208,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleNotModified()
     {
         $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
-        \Http\ResourceStub::$result['lastModified'] = 1;
+        ResourceStub::$result['lastModified'] = 1;
         $this->assertSame('', $this->handleResourceStub());
     }
 
@@ -200,9 +218,9 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleNotModifiedStdClass()
     {
         $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
-        \Http\ResourceStub::$result = new \stdClass();
-        \Http\ResourceStub::$result->name = 'Foo';
-        \Http\ResourceStub::$result->lastModified = 'Thu, 01 Jan 1970 00:00:01 +0000';
+        ResourceStub::$result = new \stdClass();
+        ResourceStub::$result->name = 'Foo';
+        ResourceStub::$result->lastModified = 'Thu, 01 Jan 1970 00:00:01 +0000';
         $this->assertSame('', $this->handleResourceStub());
     }
 

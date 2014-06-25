@@ -35,7 +35,7 @@ class Resource
      *
      * @var string
      */
-    public static $lastModifiedAttribute = 'lastModified';
+    public static $lastModifiedName = 'lastModified';
 
     /**
      * The base directory of views script.
@@ -46,6 +46,7 @@ class Resource
 
     /**
      * Callback to handle exceptions
+     * Should not throw exception
      *
      * @var callback
      */
@@ -70,45 +71,34 @@ class Resource
     {
         try {
             $factory = $factory ?: function ($className) { return new $className(); };
-            $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-            $response = null;
+            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
-            if ($path === false) {
+            // safeguard, parse_url should work
+            if ($uri === false) {
                 throw new NotFound();
             }
 
             // begin opinionated here ...
-            if (preg_match('|.+/$|', $path)) {
-                throw new MovedPermanently( rtrim($path, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
+            if (preg_match('|.+/$|', $uri)) {
+                throw new MovedPermanently( rtrim($uri, '/') . (empty($_SERVER['QUERY_STRING']) ? "" : "?{$_SERVER['QUERY_STRING']}") );
             }
 
             // method override
-            if (isset($_GET['_method']) && in_array(strtoupper($_GET['_method']), array('GET', 'POST', 'PUT', 'DELETE', 'HEAD'))) {
+            if (isset($_GET['_method'])) {
                 $_SERVER['REQUEST_METHOD'] = strtoupper($_GET['_method']);
+            }
+
+            if (!in_array($_SERVER['REQUEST_METHOD'], array('GET', 'POST', 'PUT', 'DELETE', 'HEAD'))) {
+                throw new MethodNotAllowed();
             }
 
             // lookup $resources and call appropriate method
             foreach ($resources as $className) {
-                if ($params = $className::match($path)) {
+                $params = $className::match($uri);
+                if ($params !== false) {
                     $resource = call_user_func($factory, $className);
-                    if (!method_exists($resource, $_SERVER['REQUEST_METHOD'])) {
-                        throw new MethodNotAllowed();
-                    }
-                    // assign non numeric params to resource and initialize
-                    foreach ($params as $key => $param) {
-                        if (!is_numeric($key))
-                            $resource->$key = $param;
-                    }
-                    $resource->init();
-                    $response = $resource->{ $_SERVER['REQUEST_METHOD'] }();
-                    // caching headers
-                    if ($lastModified = static::getLastModified($response)) {
-                        header("Last-Modified: $lastModified");
-                        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
-                            throw new NotModified(null);
-                        }
-                    }
-
+                    $response = $resource->dispatch($params);
+                    $resource->render($response);
                     break;
                 }
             }
@@ -117,33 +107,60 @@ class Resource
                 throw new NotFound();
             }
 
-        } catch (NotModified $resource) {
-            header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
-        } catch (Redirection $resource) {
-            header("Location: $resource->location", true, $resource->code);
-            echo $resource->getMessage();
-        } catch (Exception $resource) {
-            $response = array('error' => $resource);
-            header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
+        } catch (NotModified $e) {
+            // don't output anything
+        } catch (Redirection $e) {
+            header("Location: $e->location", true, $e->code);
+            echo $e->getMessage();
+        } catch (Exception $e) {
+            // fallback to default view rendering
         } catch (\Exception $e) {
             $fn = isset($resource) ? $resource::$onError : static::$onError;
             call_user_func($fn, $e);
-            $resource = new InternalServerError($e->getMessage(), $e);
-            $response = array('error' => $resource);
-            header("{$_SERVER['SERVER_PROTOCOL']} $resource->code $resource->reason");
+            $e = new InternalServerError($e->getMessage(), $e);
         }
-        if ($resource instanceof static) {
-            $resource->render($response);
-        } else if ($resource instanceof \Http\Error) {
-            static::renderResource($resource, $response);
+        /* finally */ if (isset($e)) {
+            header("{$_SERVER['SERVER_PROTOCOL']} $e->code $e->reason");
+            if ($e instanceof \Http\Error) {
+                // not rendering redirects
+                static::renderResource($e, array('error' => $e));
+            }
         }
+    }
+
+    /**
+     * Initialize resource with $params and call appropiate method.
+     *
+     * @param array $params
+     * @return mixed
+     */
+    public function dispatch(array $params)
+    {
+        if (!method_exists($this, $_SERVER['REQUEST_METHOD'])) {
+            throw new MethodNotAllowed();
+        }
+        // assign params to resource and initialize
+        foreach ($params as $key => $param) {
+            $this->$key = $param;
+        }
+        $this->init();
+        $response = $this->{ $_SERVER['REQUEST_METHOD'] }();
+        $lastModified = $this::getLastModified($response);
+        // caching headers
+        if ($lastModified) {
+            header("Last-Modified: $lastModified");
+            if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
+                throw new NotModified(null);
+            }
+        }
+        return $response;
     }
 
     /**
      * Test if the resource path match.
      *
      * @param string Request-URI to match against
-     * @return array of URI pattern variables
+     * @return false|array of URI pattern variables
      */
     public static function match($uri)
     {
@@ -160,11 +177,10 @@ class Resource
         }
         preg_match("{^$route$}", $uri, $matches);
         if (empty($matches)) {
-            return array();
+            return false;
         }
-        // filter numeric key > 1 in results because it is ugly
-        foreach ($matches as $key => $value) {
-            if (is_integer($key) && $key >= 1) {
+        foreach (array_keys($matches) as $key) {
+            if (is_integer($key)) {
                 unset($matches[$key]);
             }
         }
@@ -298,7 +314,7 @@ class Resource
      */
     protected static function getLastModified($object)
     {
-        $name = static::$lastModifiedAttribute;
+        $name = static::$lastModifiedName;
         $value = null;
         if (is_array($object) && array_key_exists($name, $object)) {
             $value = $object[$name];
