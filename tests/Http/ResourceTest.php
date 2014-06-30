@@ -11,6 +11,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $_SERVER['SERVER_PORT'] = '80';
         $_SERVER['REQUEST_URI'] = '/';
         unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+        ResourceStub::$base = '';
         ResourceStub::$viewsDir = 'tests/views';
         ResourceStub::$layout = true;
         ResourceStub::$result = array('name' => 'Foo');
@@ -56,6 +57,13 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
 
         Resource::$path = '/:name.:extension';
         $this->assertSame(array('name' => 'a', 'extension' => 'png'), Resource::match('/a.png'));
+    }
+
+    public function testMatchWithBase()
+    {
+        ResourceStub::$base = '/foo';
+        ResourceStub::$path = '/(:name)';
+        $this->assertSame(array(), ResourceStub::match('/foo'));
     }
 
     public function testLink()

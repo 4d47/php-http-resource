@@ -171,7 +171,8 @@ class Resource
             '/:(\w+)/' => '(?P<$1>[^./]+)',
             '/\*/' => '(?P<rest>.*?)',
         );
-        $route = static::$base . static::$path;
+        $path = preg_replace('/^\//', '/?', static::$path);
+        $route = static::$base . $path;
         foreach ($replacements as $pattern => $replacement) {
             $route = preg_replace($pattern, $replacement, $route);
         }
