@@ -13,6 +13,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
         ResourceStub::$base = '';
         ResourceStub::$viewsDir = 'tests/views';
+        ResourceStub::$viewsVars = array();
         ResourceStub::$layout = true;
         ResourceStub::$result = array('name' => 'Foo');
     }
@@ -191,6 +192,15 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleSimple()
     {
         $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub());
+    }
+
+    /**
+     * @runInSeparateProcess
+     */
+    public function testHandleViewsVars()
+    {
+        ResourceStub::$viewsVars = array('foobar' => 'foobar');
+        $this->assertSame("<p>Foo!\n</p>foobar", $this->handleResourceStub());
     }
 
     /**

@@ -45,6 +45,13 @@ class Resource
     public static $viewsDir = 'views';
 
     /**
+     * Base vars to extract on views
+     *
+     * @var string
+     */
+    public static $viewsVars = array();
+
+    /**
      * Callback to handle exceptions
      * Should not throw exception
      *
@@ -290,7 +297,7 @@ class Resource
     protected static function partial()
     {
         ob_start();
-        extract($GLOBALS);
+        extract(static::$viewsVars);
         extract((array) func_get_arg(1));
         require func_get_arg(0);
         return ob_get_clean();
