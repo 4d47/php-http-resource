@@ -5,7 +5,7 @@
 ## Install
 
 ```bash
-composer require 4d47/http-resource:2.*
+composer require 4d47/http-resource:3.*
 ```
 
 ## Usage
