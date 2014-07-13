@@ -28,14 +28,14 @@ class Product extends \Http\Resource {
     public static $path = '/products/:name';
 
     # Then you implement HTTP methods, GET, POST, PUT, etc
-    # to return the data to build the resource representation.
+    # to update the instance resource representation.
     # Server errors (5xx), client errors (4xx) and redirects (3xx) are sent by throwing
     # [http exceptions](http://github.com/4d47/php-http-exceptions).
 
     public function get() {
         if ($this->name == 'bazam')
             throw new \Http\NotFound();
-        return ['name' => $this->name];
+        $this->price = 12;
     }
 }
 ```
@@ -44,7 +44,10 @@ class Product extends \Http\Resource {
 Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The data is `extract` before being included. `link` is used to reference back resource. 
 
 ```php
-<a href="<?= \App\Product::link($name) ?>"><?= ucfirst($name) ?></a>
+<a href="<?= \App\Product::link($name) ?>">
+    <?= ucfirst($name) ?>
+    <?= $price ?>$
+</a>
 ```
 
 If there is a file named `layout.php` in the views subpath, it will be used. 

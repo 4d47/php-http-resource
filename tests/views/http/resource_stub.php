@@ -1,1 +1,1 @@
-<?php echo $name ?>!
+<?php echo $data['name'] ?>!

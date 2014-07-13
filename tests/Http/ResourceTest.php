@@ -13,7 +13,6 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         unset($_SERVER['HTTP_IF_MODIFIED_SINCE']);
         ResourceStub::$base = '';
         ResourceStub::$viewsDir = 'tests/views';
-        ResourceStub::$viewsVars = array();
         ResourceStub::$layout = true;
         ResourceStub::$result = array('name' => 'Foo');
     }
@@ -206,15 +205,6 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     /**
      * @runInSeparateProcess
      */
-    public function testHandleViewsVars()
-    {
-        ResourceStub::$viewsVars = array('foobar' => 'foobar');
-        $this->assertSame("<p>Foo!\n</p>foobar", $this->handleResourceStub());
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
     public function testHandleWithoutLayout()
     {
         ResourceStub::$layout = false;
@@ -236,18 +226,6 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
         ResourceStub::$result['lastModified'] = 1;
-        $this->assertSame('', $this->handleResourceStub());
-    }
-
-    /**
-     * @runInSeparateProcess
-     */
-    public function testHandleNotModifiedStdClass()
-    {
-        $_SERVER['HTTP_IF_MODIFIED_SINCE'] = 'Thu, 01 Jan 1970 00:00:01 +0000';
-        ResourceStub::$result = new \stdClass();
-        ResourceStub::$result->name = 'Foo';
-        ResourceStub::$result->lastModified = 'Thu, 01 Jan 1970 00:00:01 +0000';
         $this->assertSame('', $this->handleResourceStub());
     }
 

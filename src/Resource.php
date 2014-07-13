@@ -30,26 +30,11 @@ class Resource
     public static $base = '';
 
     /**
-     * The attribute name containing the last modified
-     * datetime in the in `get` response.
-     *
-     * @var string
-     */
-    public static $lastModifiedName = 'lastModified';
-
-    /**
      * The base directory of views script.
      *
      * @var string
      */
     public static $viewsDir = 'views';
-
-    /**
-     * Base vars to extract on views
-     *
-     * @var string
-     */
-    public static $viewsVars = array();
 
     /**
      * Callback to handle exceptions
@@ -65,6 +50,13 @@ class Resource
      * @var boolean
      */
     public static $layout = true;
+
+    /**
+     * Last modified timestamp
+     *
+     * @var uint timestamp
+     */
+    public $lastModified;
 
     /**
      * Route to a matching resource, calling the appropriate
@@ -104,8 +96,8 @@ class Resource
                 $params = $className::match($uri);
                 if ($params !== false) {
                     $resource = call_user_func($factory, $className);
-                    $response = $resource->dispatch($params);
-                    $resource->render($response);
+                    $resource->dispatch($params);
+                    $resource->render();
                     break;
                 }
             }
@@ -139,7 +131,6 @@ class Resource
      * Initialize resource with $params and call appropiate method.
      *
      * @param array $params
-     * @return mixed
      */
     public function dispatch(array $params)
     {
@@ -151,16 +142,15 @@ class Resource
             $this->$key = $param;
         }
         $this->init();
-        $response = $this->{ $_SERVER['REQUEST_METHOD'] }();
-        $lastModified = $this::getLastModified($response);
+        $this->{ $_SERVER['REQUEST_METHOD'] }();
         // caching headers
-        if ($lastModified) {
+        if ($this->lastModified) {
+            $lastModified = gmdate('r', $this->lastModified);
             header("Last-Modified: $lastModified");
             if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) && $_SERVER['HTTP_IF_MODIFIED_SINCE'] == $lastModified) {
                 throw new NotModified(null);
             }
         }
-        return $response;
     }
 
     /**
@@ -199,6 +189,7 @@ class Resource
      * Substitutes $vars in the $path.
      *
      * @param ... $vars
+     * @return string
      */
     public static function link()
     {
@@ -250,13 +241,11 @@ class Resource
     }
 
     /**
-     * Renders a $response using `renderResource` strategy.
-     *
-     * @param mixed data resulted from the resource method
+     * Renders a resource using `renderResource` strategy.
      */
-    public function render($response)
+    public function render()
     {
-        static::renderResource($this, $response);
+        static::renderResource($this, $this);
     }
 
     /**
@@ -306,7 +295,6 @@ class Resource
     protected static function partial()
     {
         ob_start();
-        extract(static::$viewsVars);
         extract((array) func_get_arg(1));
         require func_get_arg(0);
         return ob_get_clean();
@@ -321,30 +309,5 @@ class Resource
     protected static function classToPath($className)
     {
         return str_replace('\\', '/', strtolower(preg_replace('/(?<=\\w)([A-Z])/', '_\\1', $className)));
-    }
-
-    /**
-     * Retrieve a last modified timestamp from property or index of $object.
-     *
-     * @param object|array
-     * @return timestamp
-     */
-    protected static function getLastModified($object)
-    {
-        $name = static::$lastModifiedName;
-        $value = null;
-        if (is_array($object) && array_key_exists($name, $object)) {
-            $value = $object[$name];
-        }
-        if (is_object($object) && property_exists($object, $name)) {
-            $value = $object->$name;
-        }
-        if (is_string($value)) {
-            $value = strtotime($value);
-        }
-        if ($value) {
-            $value = gmdate('r', $value);
-        }
-        return $value;
     }
 }
