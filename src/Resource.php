@@ -229,7 +229,7 @@ class Resource
      */
     public function head()
     {
-        return $this->get();
+        $this->get();
     }
 
     /**
