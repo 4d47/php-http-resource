@@ -70,28 +70,28 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testLink()
     {
         Resource::$path = '/';
-        $this->assertSame('/', Resource::link(array()));
+        $this->assertSame('/', Resource::link());
 
         Resource::$path = '/products/:name';
-        $this->assertSame('/products/yoyo', Resource::link(array('name' => 'yoyo')));
+        $this->assertSame('/products/yoyo', Resource::link('yoyo'));
 
         Resource::$path = '/a/*';
-        $this->assertSame('/a/test', Resource::link(array('*' => 'test')));
+        $this->assertSame('/a/test', Resource::link('test'));
 
         Resource::$path = '/a(/*)';
-        $this->assertSame('/a/test', Resource::link(array('*' => 'test')));
-        $this->assertSame('/a', Resource::link(array()));
+        $this->assertSame('/a/test', Resource::link('test'));
+        $this->assertSame('/a', Resource::link());
 
         Resource::$path = '/:foo/:bar/:baz';
-        $this->assertSame('/a/b/c', Resource::link(array('foo' => 'a', 'bar' => 'b', 'baz' => 'c')));
+        $this->assertSame('/a/b/c', Resource::link('a', 'b', 'c'));
 
         Resource::$path = '/:controller(/:action(/:id))';
-        $this->assertSame('/one', Resource::link(array('controller' => 'one')));
-        $this->assertSame('/one/two', Resource::link(array('controller' => 'one', 'action' => 'two')));
-        $this->assertSame('/one/two/12', Resource::link(array('controller' => 'one', 'action' => 'two', 'id' => 12)));
+        $this->assertSame('/one', Resource::link('one'));
+        $this->assertSame('/one/two', Resource::link('one', 'two'));
+        $this->assertSame('/one/two/12', Resource::link('one', 'two', 12));
 
         Resource::$path = '/:file(.:format)';
-        $this->assertSame('/one.xml', Resource::link(array('file' => 'one', 'format' => 'xml')));
+        $this->assertSame('/one.xml', Resource::link('one', 'xml'));
 
         Resource::$base = '/foo';
         Resource::$path = '/something';
@@ -101,10 +101,19 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     /**
      * @expectedException \LogicException
      */
+    public function testTooManyParams()
+    {
+        Resource::$path = '/:name/:id';
+        Resource::link('test', 12, 'bar', 'giz');
+    }
+
+    /**
+     * @expectedException \LogicException
+     */
     public function testLinkMissingNameParam()
     {
         Resource::$path = '/:name/:id';
-        Resource::link(array('name' => 'test'));
+        Resource::link('test');
     }
 
     /**
@@ -113,7 +122,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testLinkMissingRestParam()
     {
         Resource::$path = '/:name/*';
-        Resource::link(array('name' => 'test'));
+        Resource::link('test');
     }
 
     /**

@@ -198,18 +198,27 @@ class Resource
     /**
      * Substitutes $vars in the $path.
      *
-     * @param array $vars
+     * @param ... $vars
      */
-    public static function link(array $vars = array())
+    public static function link()
     {
+        $vars = func_get_args();
         $result = static::$base . static::$path;
-        foreach ($vars as $name => $value) {
-            $pattern = $name == '*' ? '/\*/' : "/:$name/";
-            $result = preg_replace($pattern, $value, $result);
+        // Substitute var in path pattern
+        foreach ($vars as $i => $var) {
+            $result = preg_replace('/(:\w+)/', $var, $result, 1, $count);
+            if ($count == 0) {
+                $var = implode('/', array_slice($vars, $i));
+                $result = preg_replace('/\*/', $var, $result, 1, $count);
+                if ($count == 0) {
+                    throw new \LogicException("Cannot match var pattern for '$var'");
+                }
+            }
         }
-        // OMG! that's the most horrific regexes I've seen !
+        // Clean out any optional parts
         $result = preg_replace('/\([^(]*[:*].*\)/', '', $result);
         $result = preg_replace('/[()]/', '', $result);
+        // Fail if there is unsubstituted params
         if (preg_match('/[:*]/', $result)) {
             throw new \LogicException("Incomplete link: $result");
         }
