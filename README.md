@@ -41,20 +41,22 @@ class Product extends \Http\Resource {
 ```
     
 
-Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The data is `extract` before being included. `link` is used to reference back resource. 
+Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The instance properties are  `extract` before being included. `$instance` variable reference the resource itself, it can be used to assign properties or call helpers methods. `link` is used to reference back resource. 
 
 ```php
 <a href="<?= \App\Product::link($name) ?>">
-    <?= ucfirst($name) ?>
+    <?= ucfirst($instance->name) ?>
     <?= $price ?>$
 </a>
 ```
 
-If there is a file named `layout.php` in the views subpath, it will be used. 
-The `$content` variable will hold the result of the first view. Eg. using `views/layout.php`.
+If there is a file named `layout.php` in the views subpath, the first one will be used. 
+The `$content` variable will hold the result of the first view and `$instance` will also be available.
+Eg. using `views/layout.php`.
 
 ```php
 <html>
+<title><?= $instance->title ?></title>
 <body><?= $content ?></body>
 </html>
 ```
@@ -65,3 +67,6 @@ the list of your resources.
 ```php
 \Http\Resource::handle(['App\Product']);
 ```
+
+See [4d47/php-start](https://github.com/4d47/php-start/) for a basic layout of the code.
+

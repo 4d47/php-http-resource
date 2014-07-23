@@ -162,7 +162,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleNotFound()
     {
         $_SERVER['REQUEST_URI'] = '/page/not/found';
-        $this->assertSame('<p>Oups Not Found</p>', $this->handleResourceStub());
+        $this->assertSame('<p>Oups 404 Not Found</p>', $this->handleResourceStub());
     }
 
     /**
@@ -171,7 +171,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleWithParams()
     {
         $_SERVER['REQUEST_URI'] = '/bar';
-        $this->assertSame("<p>bar!\n</p>", $this->handleResourceStub());
+        $this->assertSame("..<p>bar!\n</p>", $this->handleResourceStub());
     }
 
     /**
@@ -180,7 +180,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     public function testHandleMethodNotAllowed()
     {
         $_SERVER['REQUEST_METHOD'] = 'PUT';
-        $this->assertSame('<p>Oups Method Not Allowed</p>', $this->handleResourceStub());
+        $this->assertSame('<p>Oups 405 Method Not Allowed</p>', $this->handleResourceStub());
     }
 
     /**
@@ -190,7 +190,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['REQUEST_METHOD'] = 'DELETE'; // will trigger an exception on the stub
         $this->assertEmpty(ResourceStub::$errors);
-        $this->assertSame('<p>Oups Internal Server Error</p>', $this->handleResourceStub());
+        $this->assertSame('<p>Oups 500 Internal Server Error</p>', $this->handleResourceStub());
         $this->assertNotEmpty(ResourceStub::$errors, 'onError should be called');
     }
 
@@ -199,7 +199,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandleSimple()
     {
-        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub());
+        $this->assertSame("..<p>Foo!\n</p>", $this->handleResourceStub());
     }
 
     /**
@@ -216,7 +216,7 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
      */
     public function testHandlerFactory()
     {
-        $this->assertSame("<p>Foo!\n</p>", $this->handleResourceStub(array($this, 'make')));
+        $this->assertSame("..<p>Foo!\n</p>", $this->handleResourceStub(array($this, 'make')));
     }
 
     /**

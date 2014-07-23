@@ -52,6 +52,13 @@ class Resource
     public static $layout = true;
 
     /**
+     * List of allowed HTTP methods.
+     *
+     * @var array
+     */
+    public static $allowedRequestMethods = array('GET', 'POST', 'PUT', 'DELETE', 'HEAD');
+
+    /**
      * Last modified timestamp
      *
      * @var uint timestamp
@@ -87,16 +94,16 @@ class Resource
                 $_SERVER['REQUEST_METHOD'] = strtoupper($_GET['_method']);
             }
 
-            if (!in_array($_SERVER['REQUEST_METHOD'], array('GET', 'POST', 'PUT', 'DELETE', 'HEAD'))) {
+            if (!in_array($_SERVER['REQUEST_METHOD'], static::$allowedRequestMethods)) {
                 throw new MethodNotAllowed();
             }
 
             // lookup $resources and call appropriate method
             foreach ($resources as $className) {
-                $params = $className::match($uri);
-                if ($params !== false) {
+                $props = $className::match($uri);
+                if ($props !== false) {
                     $resource = call_user_func($factory, $className);
-                    $resource->dispatch($params);
+                    $resource->dispatch($_SERVER['REQUEST_METHOD'], $props);
                     $resource->render();
                     break;
                 }
@@ -122,27 +129,28 @@ class Resource
             header("{$_SERVER['SERVER_PROTOCOL']} $e->code $e->reason");
             if ($e instanceof \Http\Error) {
                 // not rendering redirects
-                static::renderResource($e, array('error' => $e));
+                static::renderResource($e);
             }
         }
     }
 
     /**
-     * Initialize resource with $params and call appropiate method.
+     * Initialize resource with $properties and call appropiate $method.
      *
-     * @param array $params
+     * @param string $method
+     * @param array $properties
      */
-    public function dispatch(array $params)
+    public function dispatch($method, array $properties)
     {
-        if (!method_exists($this, $_SERVER['REQUEST_METHOD'])) {
+        if (!method_exists($this, $method)) {
             throw new MethodNotAllowed();
         }
-        // assign params to resource and initialize
-        foreach ($params as $key => $param) {
-            $this->$key = $param;
+        // assign properties to resource and initialize
+        foreach ($properties as $key => $value) {
+            $this->$key = $value;
         }
         $this->init();
-        $this->{ $_SERVER['REQUEST_METHOD'] }();
+        $this->$method();
         // caching headers
         if ($this->lastModified) {
             $lastModified = gmdate('r', $this->lastModified);
@@ -217,7 +225,7 @@ class Resource
     }
 
     /**
-     * Called after pattern variables are assigned.
+     * Called right after properties are assigned.
      */
     public function init()
     {
@@ -245,39 +253,41 @@ class Resource
      */
     public function render()
     {
-        static::renderResource($this, $this);
+        static::renderResource($this);
     }
 
     /**
-     * Render a $resource's $response data to the browser.
-     * Provides a basic two step view implementation.
+     * Render a $resource's to the browser using
+     * a basic two step view implementation.
      *
-     * @param \Http\Resource|\Http\Exception
-     * @param mixed data resulted from the resource method
+     * @param \Http\Resource|\Http\Exception $object
+     * @return void
      */
-    protected static function renderResource($resource, $response)
+    protected static function renderResource($object)
     {
         // first step, logical presentation
-        $resourceClass = get_class($resource);
+        $resourceClass = get_class($object);
         $content = '';
         do {
             $name = static::classToPath($resourceClass);
             $file = static::$viewsDir . "/$name.php";
             if (file_exists($file)) {
-                $content = static::partial($file, $response);
+                $data = (array) $object;
+                $data['instance'] = $object;
+                $content = static::partial($file, $data);
                 break;
             }
-            // try parent classes
+        // try parent classes
         } while (false != ($resourceClass = get_parent_class($resourceClass)));
 
         // second step, layout formatting
         if (static::$layout) {
-            $name = static::classToPath(get_class($resource));
+            $name = static::classToPath(get_class($object));
             do {
                 $name = dirname($name);
                 $file = static::$viewsDir . "/$name/layout.php";
                 if (file_exists($file)) {
-                    $content = static::partial($file, array('content' => $content));
+                    $content = static::partial($file, array('content' => $content, 'instance' => $object));
                     break;
                 }
             } while ($name != '.');
