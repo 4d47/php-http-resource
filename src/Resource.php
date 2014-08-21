@@ -61,7 +61,7 @@ class Resource
     /**
      * Last modified timestamp
      *
-     * @var uint timestamp
+     * @var uint unix timestamp
      */
     public $lastModified;
 
@@ -129,7 +129,9 @@ class Resource
             header("{$_SERVER['SERVER_PROTOCOL']} $e->code $e->reason");
             if ($e instanceof \Http\Error) {
                 // not rendering redirects
-                static::renderResource($e);
+                $error = new static();
+                $error->error = $e;
+                $error->renderTwoStepView($e);
             }
         }
     }
@@ -249,11 +251,11 @@ class Resource
     }
 
     /**
-     * Renders a resource using `renderResource` strategy.
+     * Renders a resource using `renderTwoStepView` strategy.
      */
     public function render()
     {
-        static::renderResource($this);
+        $this->renderTwoStepView($this);
     }
 
     /**
@@ -261,9 +263,8 @@ class Resource
      * a basic two step view implementation.
      *
      * @param \Http\Resource|\Http\Exception $object
-     * @return void
      */
-    protected static function renderResource($object)
+    public function renderTwoStepView($object)
     {
         // first step, logical presentation
         $resourceClass = get_class($object);
@@ -272,9 +273,7 @@ class Resource
             $name = static::classToPath($resourceClass);
             $file = static::$viewsDir . "/$name.php";
             if (file_exists($file)) {
-                $data = (array) $object;
-                $data['instance'] = $object;
-                $content = static::partial($file, $data);
+                $content = $this->partial($file, $object);
                 break;
             }
         // try parent classes
@@ -287,7 +286,7 @@ class Resource
                 $name = dirname($name);
                 $file = static::$viewsDir . "/$name/layout.php";
                 if (file_exists($file)) {
-                    $content = static::partial($file, array('content' => $content, 'instance' => $object));
+                    $content = $this->partial($file, array('content' => $content));
                     break;
                 }
             } while ($name != '.');
@@ -302,7 +301,7 @@ class Resource
      * @param array|object Variables to be extracted
      * @return string
      */
-    protected static function partial()
+    protected function partial()
     {
         ob_start();
         extract((array) func_get_arg(1));

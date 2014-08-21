@@ -37,16 +37,20 @@ class Product extends \Http\Resource {
             throw new \Http\NotFound();
         $this->price = 12;
     }
+
+    # Implement any other methods you like
+    public function __toString() {
+        return sprintf("%s, %d$$", ucfirst($this->name), $this->price);
+    }
 }
 ```
     
 
-Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The instance properties are  `extract` before being included. `$instance` variable reference the resource itself, it can be used to assign properties or call helpers methods. `link` is used to reference back resource. 
+Default `render` use scripts located in the `views` directory and named after the class name. Eg. `views/app/product.php`. The instance properties are  `extract` before being included. `$this` reference the resource itself, it can be used to assign properties or call helpers methods. `link` is used to reference back resource path. 
 
 ```php
 <a href="<?= \App\Product::link($name) ?>">
-    <?= ucfirst($instance->name) ?>
-    <?= $price ?>$
+    <?= $this ?>
 </a>
 ```
 

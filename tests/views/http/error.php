@@ -1,1 +1,1 @@
-Oups <?php echo $instance->code ?> <?php echo $reason ?>
+Oups <?php echo $this->error->code ?> <?php echo $reason ?>

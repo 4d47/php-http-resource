@@ -1,8 +1,8 @@
 
-# v3.0.0
+# 3.0.0
 
 - Add NEWS.md file
-- Add `$instance` to views
+- Add `$this` to views
 - Change `link(array)` to `link(...)`
 - Change `render(mixed)` to `render()` (render $this)
 - Change `mixed get()` to `void get()`

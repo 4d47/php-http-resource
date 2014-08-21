@@ -1,2 +1,2 @@
-<?php $instance->title = '..' ?>
+<?php $this->title = '..' ?>
 <?php echo $data['name'] ?>!
