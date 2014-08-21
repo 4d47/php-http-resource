@@ -55,12 +55,12 @@ Default `render` use scripts located in the `views` directory and named after th
 ```
 
 If there is a file named `layout.php` in the views subpath, the first one will be used. 
-The `$content` variable will hold the result of the first view and `$instance` will also be available.
+The `$content` variable will hold the result of the first view and `$this` will also be available.
 Eg. using `views/layout.php`.
 
 ```php
 <html>
-<title><?= $instance->title ?></title>
+<title><?= $this->title ?></title>
 <body><?= $content ?></body>
 </html>
 ```
