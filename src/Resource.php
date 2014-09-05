@@ -66,6 +66,13 @@ class Resource
     public $lastModified;
 
     /**
+     * Error generated while accessing resource.
+     *
+     * @var \Http\Error
+     */
+    public $error;
+
+    /**
      * Route to a matching resource, calling the appropriate
      * HTTP method and render() the response.
      *
