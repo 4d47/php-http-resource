@@ -8,6 +8,7 @@
 - Change `mixed get()` to `void get()`
 - Change `$lastModifiedName` to `$lastModified`
 - Remove `static::$viewsVars`
+- Fix match to return urldecoded pattern variables
 
 # 2.1.0
 

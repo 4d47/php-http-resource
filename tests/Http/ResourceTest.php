@@ -27,6 +27,9 @@ class ResourceTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(false, Resource::match('/about'));
         $this->assertSame(false, Resource::match('/products/'));
         $this->assertSame(array('name' => 'a'), Resource::match('/products/a'));
+        $this->assertSame(array('name' => 'some thing'), Resource::match('/products/some%20thing'));
+        $this->assertSame(array('name' => 'some thing'), Resource::match('/products/some+thing'));
+        $this->assertSame(array('name' => 'foo bar@baz'), Resource::match('/products/foo%20bar%40baz'));
 
         Resource::$path = '/a-b/:name';
         $this->assertSame(array('name' => 'a'), Resource::match('/a-b/a'));

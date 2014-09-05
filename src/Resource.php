@@ -190,6 +190,8 @@ class Resource
         foreach (array_keys($matches) as $key) {
             if (is_integer($key)) {
                 unset($matches[$key]);
+            } else {
+                $matches[$key] = urldecode($matches[$key]);
             }
         }
         return $matches;
