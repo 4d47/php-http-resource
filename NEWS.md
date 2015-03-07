@@ -1,4 +1,9 @@
 
+# 4.0.0
+
+- Add Bootstrap class so it can be injected
+- Add Initializers, a configurable list of class that is invoked on start
+
 # 3.0.0
 
 - Add NEWS.md file
